@@ -1,0 +1,5 @@
+# ch_fdw extension
+comment = 'foreign-data wrapper for Clickhouse'
+default_version = '1.0'
+module_pathname = '$libdir/ch_fdw'
+relocatable = true

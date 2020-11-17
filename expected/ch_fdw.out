@@ -1,0 +1,154 @@
+create extension ch_fdw ;
+create server ch_fdw foreign data wrapper ch_fdw options(host '127.0.0.1', port '9000');
+create foreign table gotest (name text not null, value text not null, num bigint not null, val numeric, val2 numeric, val3 real, val4 numeric, val5 date, val6 timestamptz) server ch_fdw options (table 'gotest');
+SELECT * FROM gotest;
+INFO:  passed columns [name value num val val2 val3 val4 val5 val6]
+INFO:  passed table gotest
+ name  | value | num | val  | val2 | val3 | val4 |    val5    |             val6             
+-------+-------+-----+------+------+------+------+------------+------------------------------
+ hello | world | 110 | 1101 |   11 |  1.1 |    1 | 01-08-2019 | Tue Jan 08 01:11:34 2019 PST
+(1 row)
+
+-- check that target columns are minimized
+SELECT name, val, val3 FROM gotest;
+INFO:  passed columns [name val val3]
+INFO:  passed table gotest
+ name  | val  | val3 
+-------+------+------
+ hello | 1101 |  1.1
+(1 row)
+
+-- check timestamp conversions
+SELECT val6 AT TIME ZONE 'CET' FROM gotest ;
+INFO:  passed columns [val6]
+INFO:  passed table gotest
+         timezone         
+--------------------------
+ Tue Jan 08 10:11:34 2019
+(1 row)
+
+SELECT val6 AT TIME ZONE 'UTC' FROM gotest ;
+INFO:  passed columns [val6]
+INFO:  passed table gotest
+         timezone         
+--------------------------
+ Tue Jan 08 09:11:34 2019
+(1 row)
+
+-- convert CH float to numeric in PG , shows that not all columns necessarily need to be mapped, it's only needs to be correct.
+create foreign table gotest2 (name text not null, val3 numeric) server ch_fdw options (table 'gotest');
+SELECT * FROM gotest2;
+INFO:  passed columns [name val3]
+INFO:  passed table gotest
+ name  | val3 
+-------+------
+ hello |  1.1
+(1 row)
+
+-- checks target columns are properly pushed down or not
+SELECT val3 FROM gotest WHERE val2 = 11;
+INFO:  passed columns [val3]
+INFO:  passed table gotest
+INFO:  passed conditions [((val2 = 11))]
+ val3 
+------
+  1.1
+(1 row)
+
+SELECT val3 FROM gotest WHERE name IN ('hello', 'world');
+INFO:  passed columns [val3]
+INFO:  passed table gotest
+INFO:  passed conditions [(name IN ('hello','world'))]
+ val3 
+------
+  1.1
+(1 row)
+
+SELECT val3 FROM gotest WHERE upper(name) = 'HELLO';
+INFO:  passed columns [val3]
+INFO:  passed table gotest
+INFO:  passed conditions [((upper(name) = 'HELLO'))]
+ val3 
+------
+  1.1
+(1 row)
+
+SELECT val3 FROM gotest WHERE val2 IS NULL;
+INFO:  passed columns [val3]
+INFO:  passed table gotest
+INFO:  passed conditions [(isNull(val2))]
+ val3 
+------
+(0 rows)
+
+-- check array support
+create foreign table gotest3 (val integer[], val2 text[]) server ch_fdw options (table 'gotest2');
+SELECT * FROM gotest3;
+INFO:  passed columns [val val2]
+INFO:  passed table gotest2
+  val  |       val2        
+-------+-------------------
+ {1,2} | {'hello','world'}
+(1 row)
+
+-- check array equality (different then IN operator, this is treated as const expr)
+SELECT val FROM gotest3 WHERE val = ARRAY[1, 2];
+INFO:  passed columns [val]
+INFO:  passed table gotest2
+INFO:  passed conditions [((val = [1,2]))]
+  val  
+-------
+ {1,2}
+(1 row)
+
+-- simple aggregate functions
+create foreign table gotest4 (val numeric, val2 numeric) server ch_fdw options (table 'gotest3');
+SELECT sum(val),max(val2), min(val2) from gotest4;
+INFO:  passed columns [sum(val) max(val2) min(val2)]
+INFO:  passed table gotest3
+ sum | max | min 
+-----+-----+-----
+  10 |   2 |   2
+(1 row)
+
+SELECT sum(val+5)+2 from gotest4 group by val2;
+INFO:  passed columns [(sum((val + 5)) + 2) val2]
+INFO:  passed table gotest3
+INFO:  passed group by [val2]
+ ?column? 
+----------
+       32
+(1 row)
+
+select sum(val2) from gotest4 group by val having sum(val2) > 1 AND sum(val) > 2;
+INFO:  passed columns [sum(val2) val]
+INFO:  passed table gotest3
+INFO:  passed group by [val]
+INFO:  passed having ((sum(val2) > 1)) AND ((sum(val) > 2))
+ sum 
+-----
+   2
+   2
+(2 rows)
+
+-- only conditions are evaluated , order by is evaluated locally
+select * from gotest4 WHERE val2 > 1 and val > 2 order by val;
+INFO:  passed columns [val val2]
+INFO:  passed table gotest3
+INFO:  passed conditions [((val2 > 1)) AND ((val > 2))]
+ val | val2 
+-----+------
+   3 |    2
+   4 |    2
+(2 rows)
+
+-- group by extract example
+select extract(month from val5) as month, sum(val) from gotest group by month  ;
+INFO:  passed columns [toMonth(toDateTime(val5)) sum(val)]
+INFO:  passed table gotest
+INFO:  passed group by [(toMonth(toDateTime(val5)))]
+ month | sum  
+-------+------
+     1 | 1101
+(1 row)
+
