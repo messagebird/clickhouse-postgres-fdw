@@ -11,16 +11,21 @@ See [design.md](design.md) to make your own mind :)
 
 ## Status
 This project should be considered experimental.
+
 There is no active developement and usage within MessageBird but feel free to fork/extend this project.
+
 We hope that the code can serve as a reference for a working FDW and to some extent a sample usage of Golang/C interop.
 
 The FDW has been tested to work with Postgres 13 and Clickhouse 20.3.19.4 on Ubuntu 20.04.
+
 But should work on any unix/linux OS that has PG 13 library headers and Clickhouse.
+
 The FDW doesn't rely on any specific features of Clickhouse(CH) so it should work with any version of CH available.
 
 ## Getting Started
 
 Clone this repository.
+
 Spin up a container from the Dockerfile present in the project.
 
 *    ```bash
@@ -45,6 +50,7 @@ For local development, install PG on mac with
     brew install postgres
 ```
 Build and testing env are most easily available on ubuntu (either docker images or native).
+
 To locate the postgres library sources on either mac/linux, you can do:
 ```bash
 pg_config --includedir-server
@@ -70,6 +76,7 @@ make install # or make installcheck
 #### Sample Usage
 
 After installation of extensions, restart PG server and enter into `psql` shell.
+
 Make sure that corresponding table also exists in CH (provide CH table name in options) and have matching column datatypes and names.
 
 ```
