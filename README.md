@@ -28,7 +28,7 @@ Clone this repository.
 
 Spin up a container from the Dockerfile present in the project.
 
-*    ```bash
+*   ```bash
     docker build --pull -f Dockerfile -t ch_fdw:$SOME_VERSION .
     ```
 *   ```bash
