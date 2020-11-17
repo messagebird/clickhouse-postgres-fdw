@@ -1,8 +1,8 @@
 package main
 
 /*
-#cgo darwin CFLAGS: -I/usr/local/Cellar/postgresql/11.1/include/internal -I/usr/local/Cellar/postgresql/11.1/include/server
-#cgo linux CFLAGS: -I/usr/include/postgresql/11/server -I/usr/include/postgresql/internal
+#cgo darwin CFLAGS: -I/usr/local/include/postgresql/internal/ -I/usr/local/include/postgresql/server
+#cgo linux CFLAGS: -I/usr/include/postgresql/13/server -I/usr/include/postgresql/internal
 #cgo linux LDFLAGS: -Wl,-unresolved-symbols=ignore-all
 #cgo darwin LDFLAGS: -Wl,-undefined,dynamic_lookup
 #include "ch_helpers.h"
