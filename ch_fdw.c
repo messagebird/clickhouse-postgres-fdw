@@ -37,7 +37,7 @@ ch_fdw_handler(PG_FUNCTION_ARGS)
 
 /*
  * Validate the generic options given to a FOREIGN DATA WRAPPER, SERVER
- * USER MAPPING or FOREIGN TABLE that uses hello_fdw.
+ * USER MAPPING or FOREIGN TABLE that uses ch_fdw.
  */
 Datum
 ch_fdw_validator(PG_FUNCTION_ARGS)
